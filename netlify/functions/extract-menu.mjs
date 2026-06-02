@@ -26,6 +26,17 @@ export const handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: 'Missing imageData or mediaType' }) }
   }
 
+  // base64 inflates size ~33%; Netlify caps the request body near 6 MB.
+  // Reject early with a clear message instead of a confusing gateway error.
+  const approxBytes = Math.floor(imageData.length * 0.75)
+  if (approxBytes > 4 * 1024 * 1024) {
+    return {
+      statusCode: 413,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'File too large', details: 'Please upload a file under 4 MB (try a single-page PDF or a compressed image).' }),
+    }
+  }
+
   try {
     const client = new Anthropic({ apiKey })
 

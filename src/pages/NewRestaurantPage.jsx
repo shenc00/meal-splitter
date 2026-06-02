@@ -83,7 +83,16 @@ export default function NewRestaurantPage() {
           body: JSON.stringify({ imageData: base64, mediaType }),
         })
 
-        if (!res.ok) throw new Error(`Server error: ${res.status}`)
+        if (!res.ok) {
+          let detail = `Server error ${res.status}`
+          try {
+            const errBody = await res.json()
+            if (errBody.error) detail = errBody.details ? `${errBody.error}: ${errBody.details}` : errBody.error
+          } catch {
+            // response wasn't JSON (e.g. gateway timeout) — keep status-based message
+          }
+          throw new Error(detail)
+        }
         const data = await res.json()
         const extracted = (data.items || []).map(item => ({
           id: generateId(),
@@ -93,10 +102,10 @@ export default function NewRestaurantPage() {
         }))
         setMenuItems(prev => [...prev, ...extracted])
         if (extracted.length === 0) {
-          setExtractError('No items found in the image. Try a clearer photo or add items manually.')
+          setExtractError('No items found in the file. Try a clearer photo/PDF or add items manually.')
         }
-      } catch {
-        setExtractError('Could not extract menu automatically. Please add items manually below.')
+      } catch (err) {
+        setExtractError(`Could not extract menu: ${err.message}. Please add items manually below.`)
       } finally {
         setIsExtracting(false)
       }
