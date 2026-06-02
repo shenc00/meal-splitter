@@ -1,14 +1,30 @@
 import { createClient } from '@supabase/supabase-js'
 
-const url = import.meta.env.VITE_SUPABASE_URL
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+// Trim to tolerate accidental whitespace/newlines, and strip stray surrounding
+// quotes (a common mistake when pasting values into a hosting dashboard).
+const clean = (v) => (typeof v === 'string' ? v.trim().replace(/^["']|["']$/g, '') : v)
+
+const url = clean(import.meta.env.VITE_SUPABASE_URL)
+const anonKey = clean(import.meta.env.VITE_SUPABASE_ANON_KEY)
 
 // Shared sessions are optional — if the keys aren't configured the app still
 // works in local (single-device) mode. Pages check `isSupabaseConfigured`
 // before using shared features.
-export const isSupabaseConfigured = Boolean(url && anonKey)
+//
+// IMPORTANT: this module is imported transitively by App.jsx, so a throw here
+// would blank the whole app. We create the client defensively and fall back to
+// "sharing unavailable" rather than crashing if the URL/key is malformed.
+let client = null
+if (url && anonKey) {
+  try {
+    client = createClient(url, anonKey)
+  } catch (err) {
+    console.error('Supabase client could not be created — shared sessions disabled.', err)
+  }
+}
 
-export const supabase = isSupabaseConfigured ? createClient(url, anonKey) : null
+export const supabase = client
+export const isSupabaseConfigured = Boolean(client)
 
 function shortId() {
   // Readable-ish, collision-unlikely id for the share URL.
