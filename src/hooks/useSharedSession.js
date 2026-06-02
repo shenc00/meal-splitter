@@ -5,6 +5,7 @@ import {
   fetchOrders,
   upsertUserOrders,
   updateSessionMeta,
+  toggleExcludedUser,
 } from '../lib/supabase.js'
 
 // Loads a shared session + everyone's orders, keeps them live via Supabase
@@ -32,6 +33,7 @@ export function useSharedSession(sessionId) {
       orders,
       serviceChargeEnabled: row.service_charge_enabled,
       gstEnabled: row.gst_enabled,
+      excludedUsers: row.excluded_users || [],
       paidBy: row.paid_by,
     }
   }, [])
@@ -98,6 +100,22 @@ export function useSharedSession(sessionId) {
     }
   }, [sessionId, reload])
 
+  const toggleExcluded = useCallback(async (user) => {
+    // Optimistic toggle, then persist (read-modify-write on the server).
+    setSession(prev => {
+      if (!prev) return prev
+      const cur = prev.excludedUsers || []
+      const next = cur.includes(user) ? cur.filter(u => u !== user) : [...cur, user]
+      return { ...prev, excludedUsers: next }
+    })
+    try {
+      await toggleExcludedUser(sessionId, user)
+    } catch (err) {
+      setError(err.message || 'Could not update treat')
+      reload().catch(() => {})
+    }
+  }, [sessionId, reload])
+
   return {
     session,
     loading,
@@ -107,6 +125,7 @@ export function useSharedSession(sessionId) {
       toggleServiceCharge: () => setMeta({ service_charge_enabled: !session?.serviceChargeEnabled }),
       toggleGst: () => setMeta({ gst_enabled: !session?.gstEnabled }),
       setPaidBy: (user) => setMeta({ paid_by: user }),
+      toggleExcluded,
     },
   }
 }

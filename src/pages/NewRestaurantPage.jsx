@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp, generateId } from '../context/AppContext.jsx'
+import { extractItems } from '../lib/extractItems.js'
 import { Camera, Upload, Plus, Trash2, ChevronLeft, Loader2, Check, Pencil } from 'lucide-react'
 
 const CATEGORIES = ['Appetizers', 'Main Course', 'Sides', 'Desserts', 'Drinks', 'Other']
@@ -71,46 +72,23 @@ export default function NewRestaurantPage() {
     setIsExtracting(true)
     setExtractError('')
 
-    const reader = new FileReader()
-    reader.onload = async (e) => {
-      const base64 = e.target.result.split(',')[1]
-      const mediaType = file.type
-
-      try {
-        const res = await fetch('/.netlify/functions/extract-menu', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageData: base64, mediaType }),
-        })
-
-        if (!res.ok) {
-          let detail = `Server error ${res.status}`
-          try {
-            const errBody = await res.json()
-            if (errBody.error) detail = errBody.details ? `${errBody.error}: ${errBody.details}` : errBody.error
-          } catch {
-            // response wasn't JSON (e.g. gateway timeout) — keep status-based message
-          }
-          throw new Error(detail)
-        }
-        const data = await res.json()
-        const extracted = (data.items || []).map(item => ({
-          id: generateId(),
-          name: item.name || '',
-          price: parseFloat(item.price) || 0,
-          category: item.category || 'Other',
-        }))
-        setMenuItems(prev => [...prev, ...extracted])
-        if (extracted.length === 0) {
-          setExtractError('No items found in the file. Try a clearer photo/PDF or add items manually.')
-        }
-      } catch (err) {
-        setExtractError(`Could not extract menu: ${err.message}. Please add items manually below.`)
-      } finally {
-        setIsExtracting(false)
+    try {
+      const { items } = await extractItems(file, 'menu')
+      const extracted = items.map(item => ({
+        id: generateId(),
+        name: item.name || '',
+        price: parseFloat(item.price) || 0,
+        category: item.category || 'Other',
+      }))
+      setMenuItems(prev => [...prev, ...extracted])
+      if (extracted.length === 0) {
+        setExtractError('No items found in the file. Try a clearer photo/PDF or add items manually.')
       }
+    } catch (err) {
+      setExtractError(`Could not extract menu: ${err.message}. Please add items manually below.`)
+    } finally {
+      setIsExtracting(false)
     }
-    reader.readAsDataURL(file)
   }
 
   const addManualItem = ({ name: n, price, category }) => {

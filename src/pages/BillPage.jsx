@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext.jsx'
-import { ChevronLeft, ChevronDown, ChevronUp, ShoppingBag, ArrowRight, RotateCcw } from 'lucide-react'
+import { ChevronLeft, ChevronDown, ChevronUp, ShoppingBag, ArrowRight, RotateCcw, Gift } from 'lucide-react'
 import { calculateBill, calculateSettlement, fmt } from '../utils/calculations.js'
 
 const COLORS = ['bg-orange-100 text-orange-600', 'bg-blue-100 text-blue-600', 'bg-green-100 text-green-600', 'bg-purple-100 text-purple-600', 'bg-pink-100 text-pink-600', 'bg-yellow-100 text-yellow-600']
@@ -30,8 +30,9 @@ export default function BillPage() {
 
   const [expandedUser, setExpandedUser] = useState(null)
 
-  const { grandSubtotal, grandServiceCharge, grandGst, grandTotal, userTotals } =
+  const { grandSubtotal, grandServiceCharge, grandGst, grandTotal, userTotals, treatActive, treatPerPayer } =
     calculateBill(session, restaurant.menu)
+  const excludedUsers = session.excludedUsers || []
 
   const settlement = calculateSettlement(session.users, userTotals, session.paidBy)
 
@@ -59,7 +60,7 @@ export default function BillPage() {
       {/* Per-user cards */}
       <div className="space-y-2 mb-5">
         {session.users.map((user, i) => {
-          const { subtotal, serviceCharge, gst, total } = userTotals[user] || {}
+          const { subtotal, serviceCharge, gst, consumption, treatShare, payable, excluded } = userTotals[user] || {}
           const userOrders = session.orders[user] || {}
           const hasOrders = Object.keys(userOrders).length > 0
           const isExpanded = expandedUser === user
@@ -75,12 +76,22 @@ export default function BillPage() {
                     {user[0].toUpperCase()}
                   </div>
                   <div className="text-left">
-                    <p className="font-semibold text-gray-900">{user}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-semibold text-gray-900">{user}</p>
+                      {excluded && (
+                        <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-green-600 bg-green-50 rounded-full px-1.5 py-0.5">
+                          <Gift className="w-2.5 h-2.5" /> Treated
+                        </span>
+                      )}
+                    </div>
                     {!hasOrders && <p className="text-xs text-gray-400">No orders</p>}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-gray-900">{fmt(total || 0)}</span>
+                  {excluded && consumption > 0 && (
+                    <span className="text-xs text-gray-300 line-through">{fmt(consumption)}</span>
+                  )}
+                  <span className={`font-bold ${excluded ? 'text-green-600' : 'text-gray-900'}`}>{fmt(payable || 0)}</span>
                   {hasOrders && (
                     isExpanded
                       ? <ChevronUp className="w-4 h-4 text-gray-400" />
@@ -120,9 +131,19 @@ export default function BillPage() {
                         <span>{fmt(gst)}</span>
                       </div>
                     )}
+                    <div className="flex justify-between text-xs text-gray-400">
+                      <span>Own consumption</span>
+                      <span>{fmt(consumption)}</span>
+                    </div>
+                    {!excluded && treatShare > 0 && (
+                      <div className="flex justify-between text-xs text-green-600">
+                        <span>+ Share of treat</span>
+                        <span>{fmt(treatShare)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-sm font-bold text-gray-900 pt-1 border-t border-gray-100">
-                      <span>Total</span>
-                      <span>{fmt(total)}</span>
+                      <span>{excluded ? 'Treated — pays' : 'Pays'}</span>
+                      <span>{fmt(payable)}</span>
                     </div>
                   </div>
                 </div>
@@ -157,6 +178,41 @@ export default function BillPage() {
             />
           </div>
         </div>
+      </div>
+
+      {/* Group treat */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-5">
+        <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-1">
+          <Gift className="w-4 h-4 text-green-500" /> Group treat
+        </div>
+        <p className="text-xs text-gray-400 mb-3">Tap anyone being treated — their cost is split evenly among the rest.</p>
+        <div className="flex flex-wrap gap-2">
+          {session.users.map((user) => {
+            const isExcluded = excludedUsers.includes(user)
+            return (
+              <button
+                key={user}
+                onClick={() => dispatch({ type: 'TOGGLE_EXCLUDED_USER', payload: user })}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium transition-all active:scale-95 ${
+                  isExcluded ? 'bg-green-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {isExcluded && <Gift className="w-3.5 h-3.5" />}
+                {user}
+              </button>
+            )
+          })}
+        </div>
+        {treatActive && (
+          <p className="text-xs text-green-600 mt-3">
+            Each paying person covers an extra {fmt(treatPerPayer)} of the treat.
+          </p>
+        )}
+        {excludedUsers.length > 0 && !treatActive && (
+          <p className="text-xs text-amber-500 mt-3">
+            Everyone can't be treated — at least one person must pay. Exclusions ignored.
+          </p>
+        )}
       </div>
 
       {/* Grand total */}

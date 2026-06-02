@@ -16,6 +16,13 @@ The "Start Shared Session" button only appears once the keys below are set.
    read/write that session — fine for casual meals, don't store anything
    sensitive).
 
+   > **Already ran an earlier version?** `create table if not exists` won't add
+   > new columns. Run this once to add group-treat support:
+   > ```sql
+   > alter table public.sessions
+   >   add column if not exists excluded_users jsonb not null default '[]'::jsonb;
+   > ```
+
 ## 3. Get your API keys
 **Project Settings → API**, copy:
 - **Project URL** → `VITE_SUPABASE_URL`

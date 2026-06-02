@@ -10,9 +10,14 @@ create table if not exists public.sessions (
   users                    jsonb not null default '[]'::jsonb,
   service_charge_enabled   boolean not null default false,
   gst_enabled              boolean not null default false,
+  excluded_users           jsonb not null default '[]'::jsonb,  -- diners being treated (pay nothing)
   paid_by                  text,
   created_at               timestamptz not null default now()
 );
+
+-- If you created the table before excluded_users existed, run this once:
+--   alter table public.sessions
+--     add column if not exists excluded_users jsonb not null default '[]'::jsonb;
 
 -- One row per (session, user). Each device writes only its own user's row,
 -- so simultaneous ordering never clobbers another person's order.

@@ -1,11 +1,12 @@
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext.jsx'
-import { Plus, UtensilsCrossed, Clock, ChevronRight } from 'lucide-react'
+import { UtensilsCrossed, Clock, ChevronRight, ReceiptText, BookOpen } from 'lucide-react'
 
 export default function HomePage() {
   const { state } = useApp()
   const navigate = useNavigate()
-  const { restaurants } = state
+  // One-off receipt scans are kept out of the saved restaurants list.
+  const restaurants = state.restaurants.filter(r => !r.isReceipt)
 
   const sorted = [...restaurants].sort((a, b) => {
     if (!a.lastVisit && !b.lastVisit) return 0
@@ -24,13 +25,22 @@ export default function HomePage() {
         <p className="text-gray-400 text-sm mt-1">Split bills easily with friends</p>
       </div>
 
-      <button
-        onClick={() => navigate('/restaurant/new')}
-        className="w-full flex items-center justify-center gap-2 bg-orange-500 text-white rounded-2xl p-4 mb-8 font-semibold text-base shadow-md shadow-orange-200 hover:bg-orange-600 active:scale-95 transition-all"
-      >
-        <Plus className="w-5 h-5" />
-        Add New Restaurant
-      </button>
+      <div className="grid grid-cols-2 gap-3 mb-8">
+        <button
+          onClick={() => navigate('/restaurant/new')}
+          className="flex flex-col items-center justify-center gap-2 bg-orange-500 text-white rounded-2xl p-5 font-semibold text-sm shadow-md shadow-orange-200 hover:bg-orange-600 active:scale-95 transition-all"
+        >
+          <BookOpen className="w-6 h-6" />
+          Restaurant Menu
+        </button>
+        <button
+          onClick={() => navigate('/receipt/new')}
+          className="flex flex-col items-center justify-center gap-2 bg-white text-orange-600 border-2 border-orange-300 rounded-2xl p-5 font-semibold text-sm hover:bg-orange-50 active:scale-95 transition-all"
+        >
+          <ReceiptText className="w-6 h-6" />
+          Scan Receipt
+        </button>
+      </div>
 
       {sorted.length > 0 ? (
         <div>

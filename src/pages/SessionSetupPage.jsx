@@ -28,6 +28,8 @@ export default function SessionSetupPage() {
       const sessionId = await createSharedSession({
         restaurantName: restaurant.name,
         menu: restaurant.menu,
+        serviceChargeEnabled: restaurant.defaultServiceChargeEnabled || false,
+        gstEnabled: restaurant.defaultGstEnabled || false,
       })
       // Host joins their own session like everyone else (picks a name + gets the share link).
       navigate(`/join/${sessionId}`)
@@ -48,7 +50,16 @@ export default function SessionSetupPage() {
 
   const handleStart = () => {
     if (users.length === 0) return
-    dispatch({ type: 'START_SESSION', payload: { restaurantId, users } })
+    dispatch({
+      type: 'START_SESSION',
+      payload: {
+        restaurantId,
+        users,
+        // Receipts carry detected service charge / GST so they're pre-enabled.
+        serviceChargeEnabled: restaurant.defaultServiceChargeEnabled || false,
+        gstEnabled: restaurant.defaultGstEnabled || false,
+      },
+    })
     navigate('/session/order')
   }
 

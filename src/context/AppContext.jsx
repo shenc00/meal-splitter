@@ -94,8 +94,10 @@ function reducer(state, action) {
           restaurantId: action.payload.restaurantId,
           users: action.payload.users,
           orders,
-          serviceChargeEnabled: false,
-          gstEnabled: false,
+          // Receipts can pre-enable these when a service charge / GST line is detected.
+          serviceChargeEnabled: action.payload.serviceChargeEnabled || false,
+          gstEnabled: action.payload.gstEnabled || false,
+          excludedUsers: [],
           paidBy: null,
           createdAt: new Date().toISOString(),
         },
@@ -137,8 +139,26 @@ function reducer(state, action) {
         session: { ...state.session, paidBy: action.payload },
       }
 
-    case 'END_SESSION':
-      return { ...state, session: null }
+    case 'TOGGLE_EXCLUDED_USER': {
+      const current = state.session.excludedUsers || []
+      const user = action.payload
+      const excludedUsers = current.includes(user)
+        ? current.filter(u => u !== user)
+        : [...current, user]
+      return { ...state, session: { ...state.session, excludedUsers } }
+    }
+
+    case 'END_SESSION': {
+      // One-off receipt "restaurants" are throwaway — drop them when the session ends.
+      const endedRestaurantId = state.session?.restaurantId
+      return {
+        ...state,
+        restaurants: state.restaurants.filter(
+          r => !(r.isReceipt && r.id === endedRestaurantId)
+        ),
+        session: null,
+      }
+    }
 
     default:
       return state

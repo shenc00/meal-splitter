@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AppProvider } from './context/AppContext.jsx'
 import HomePage from './pages/HomePage.jsx'
 import NewRestaurantPage from './pages/NewRestaurantPage.jsx'
+import ScanReceiptPage from './pages/ScanReceiptPage.jsx'
 import SessionSetupPage from './pages/SessionSetupPage.jsx'
 import OrderPage from './pages/OrderPage.jsx'
 import BillPage from './pages/BillPage.jsx'
@@ -17,6 +18,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/restaurant/new" element={<NewRestaurantPage />} />
+            <Route path="/receipt/new" element={<ScanReceiptPage />} />
             <Route path="/session/setup" element={<SessionSetupPage />} />
             <Route path="/session/order" element={<OrderPage />} />
             <Route path="/session/bill" element={<BillPage />} />

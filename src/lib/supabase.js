@@ -16,19 +16,30 @@ function shortId() {
 }
 
 // Host creates a shared session from a restaurant (menu is snapshotted).
-export async function createSharedSession({ restaurantName, menu }) {
+export async function createSharedSession({ restaurantName, menu, serviceChargeEnabled = false, gstEnabled = false }) {
   const id = shortId()
   const { error } = await supabase.from('sessions').insert({
     id,
     restaurant_name: restaurantName,
     menu,
     users: [],
-    service_charge_enabled: false,
-    gst_enabled: false,
+    service_charge_enabled: serviceChargeEnabled,
+    gst_enabled: gstEnabled,
+    excluded_users: [],
     paid_by: null,
   })
   if (error) throw error
   return id
+}
+
+// Toggle whether a diner is being treated (excused from paying).
+export async function toggleExcludedUser(sessionId, name) {
+  const session = await fetchSession(sessionId)
+  const current = session.excluded_users || []
+  const next = current.includes(name) ? current.filter(u => u !== name) : [...current, name]
+  const { error } = await supabase.from('sessions').update({ excluded_users: next }).eq('id', sessionId)
+  if (error) throw error
+  return next
 }
 
 export async function fetchSession(sessionId) {
