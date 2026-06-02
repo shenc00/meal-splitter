@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext.jsx'
-import { Plus, X, ChevronLeft, Users, ArrowRight } from 'lucide-react'
+import { Plus, X, ChevronLeft, Users, ArrowRight, Share2, Loader2 } from 'lucide-react'
+import { isSupabaseConfigured, createSharedSession } from '../lib/supabase.js'
 
 export default function SessionSetupPage() {
   const { state, dispatch } = useApp()
@@ -12,10 +13,28 @@ export default function SessionSetupPage() {
   const restaurant = state.restaurants.find(r => r.id === restaurantId)
   const [users, setUsers] = useState([])
   const [input, setInput] = useState('')
+  const [creatingShared, setCreatingShared] = useState(false)
+  const [shareError, setShareError] = useState('')
 
   if (!restaurant) {
     navigate('/')
     return null
+  }
+
+  const handleStartShared = async () => {
+    setCreatingShared(true)
+    setShareError('')
+    try {
+      const sessionId = await createSharedSession({
+        restaurantName: restaurant.name,
+        menu: restaurant.menu,
+      })
+      // Host joins their own session like everyone else (picks a name + gets the share link).
+      navigate(`/join/${sessionId}`)
+    } catch (err) {
+      setShareError(err.message || 'Could not start a shared session')
+      setCreatingShared(false)
+    }
   }
 
   const addUser = () => {
@@ -102,6 +121,29 @@ export default function SessionSetupPage() {
         Start Ordering
         <ArrowRight className="w-5 h-5" />
       </button>
+
+      {isSupabaseConfigured && (
+        <>
+          <div className="flex items-center gap-3 my-5">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-xs text-gray-400 font-medium">or order together</span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+
+          <button
+            onClick={handleStartShared}
+            disabled={creatingShared}
+            className="w-full border-2 border-orange-400 text-orange-600 rounded-2xl p-4 font-semibold disabled:opacity-50 hover:bg-orange-50 active:scale-95 transition-all flex items-center justify-center gap-2"
+          >
+            {creatingShared ? <Loader2 className="w-5 h-5 animate-spin" /> : <Share2 className="w-5 h-5" />}
+            Start Shared Session
+          </button>
+          <p className="text-xs text-gray-400 text-center mt-2">
+            Everyone scans a QR code and orders on their own phone. No need to add names here.
+          </p>
+          {shareError && <p className="text-red-500 text-xs text-center mt-2">{shareError}</p>}
+        </>
+      )}
     </div>
   )
 }
