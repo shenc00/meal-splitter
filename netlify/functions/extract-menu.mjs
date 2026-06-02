@@ -46,7 +46,7 @@ export const handler = async (event) => {
       : { type: 'image', source: { type: 'base64', media_type: mediaType, data: imageData } }
 
     const message = await client.messages.create({
-      model: 'claude-opus-4-8',
+      model: 'claude-haiku-4-5',
       max_tokens: 4096,
       messages: [
         {
@@ -62,7 +62,11 @@ export const handler = async (event) => {
       ],
     })
 
-    const text = message.content[0].text.trim()
+    const textBlock = message.content.find(b => b.type === 'text')
+    if (!textBlock) {
+      throw new Error('Model returned no text content')
+    }
+    const text = textBlock.text.trim()
 
     // Strip markdown code fences if present
     const cleaned = text.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim()
