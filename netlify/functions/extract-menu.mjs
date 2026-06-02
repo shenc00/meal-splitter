@@ -29,6 +29,11 @@ export const handler = async (event) => {
   try {
     const client = new Anthropic({ apiKey })
 
+    const isPdf = mediaType === 'application/pdf'
+    const sourceBlock = isPdf
+      ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: imageData } }
+      : { type: 'image', source: { type: 'base64', media_type: mediaType, data: imageData } }
+
     const message = await client.messages.create({
       model: 'claude-opus-4-8',
       max_tokens: 4096,
@@ -36,10 +41,7 @@ export const handler = async (event) => {
         {
           role: 'user',
           content: [
-            {
-              type: 'image',
-              source: { type: 'base64', media_type: mediaType, data: imageData },
-            },
+            sourceBlock,
             {
               type: 'text',
               text: 'Extract all menu items from this image. Return ONLY a valid JSON array with no markdown formatting. Each object must have exactly these fields: "name" (string), "price" (number in the currency shown, no currency symbol), "category" (one of: "Appetizers", "Main Course", "Sides", "Desserts", "Drinks", "Other"). Example output: [{"name":"Chicken Rice","price":5.50,"category":"Main Course"},{"name":"Teh Tarik","price":1.80,"category":"Drinks"}]',

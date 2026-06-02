@@ -183,7 +183,7 @@ export default function NewRestaurantPage() {
           <label className="flex-1 flex items-center justify-center gap-2 bg-white border border-amber-300 text-amber-700 rounded-xl py-3 cursor-pointer hover:bg-amber-50 transition-colors text-sm font-medium">
             <Upload className="w-4 h-4" />
             Upload
-            <input type="file" accept="image/*" className="hidden"
+            <input type="file" accept="image/*,application/pdf" className="hidden"
               onChange={e => e.target.files?.[0] && handlePhotoCapture(e.target.files[0])} />
           </label>
         </div>
