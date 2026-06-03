@@ -38,14 +38,20 @@ alter publication supabase_realtime add table public.session_orders;
 -- and write that session. That is acceptable for casual shared meals. The
 -- policies below scope access by knowing the (random) session id only.
 -- Do NOT store anything sensitive in these tables.
+
+-- Table-level privileges. RLS policies are NOT enough on their own — the API
+-- roles also need a GRANT, or you get "permission denied for table".
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on public.sessions to anon, authenticated;
+grant select, insert, update, delete on public.session_orders to anon, authenticated;
+
 alter table public.sessions enable row level security;
 alter table public.session_orders enable row level security;
 
-create policy "anon can read sessions"   on public.sessions       for select using (true);
-create policy "anon can insert sessions" on public.sessions       for insert with check (true);
-create policy "anon can update sessions" on public.sessions       for update using (true) with check (true);
+drop policy if exists "anon rw sessions" on public.sessions;
+create policy "anon rw sessions" on public.sessions
+  for all using (true) with check (true);
 
-create policy "anon can read orders"     on public.session_orders for select using (true);
-create policy "anon can insert orders"   on public.session_orders for insert with check (true);
-create policy "anon can update orders"   on public.session_orders for update using (true) with check (true);
-create policy "anon can delete orders"   on public.session_orders for delete using (true);
+drop policy if exists "anon rw orders" on public.session_orders;
+create policy "anon rw orders" on public.session_orders
+  for all using (true) with check (true);
