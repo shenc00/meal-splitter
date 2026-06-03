@@ -27,8 +27,19 @@ export const supabase = client
 export const isSupabaseConfigured = Boolean(client)
 
 function shortId() {
-  // Readable-ish, collision-unlikely id for the share URL.
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+  // Short, human-typable code used both as the session id and the join code.
+  // Alphabet excludes easily-confused characters (0/O, 1/I/L).
+  const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+  const len = 6
+  let out = ''
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const buf = new Uint32Array(len)
+    crypto.getRandomValues(buf)
+    for (let i = 0; i < len; i++) out += alphabet[buf[i] % alphabet.length]
+  } else {
+    for (let i = 0; i < len; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)]
+  }
+  return out
 }
 
 // Host creates a shared session from a restaurant (menu is snapshotted).

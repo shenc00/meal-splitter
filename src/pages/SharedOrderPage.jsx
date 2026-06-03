@@ -16,11 +16,21 @@ export default function SharedOrderPage() {
   const [showShare, setShowShare] = useState(false)
 
   const me = getSharedUser(sessionId)
+  const [autoShared, setAutoShared] = useState(false)
 
   // No identity on this device → go pick a name first.
   useEffect(() => {
     if (!me) navigate(`/join/${sessionId}`, { replace: true })
   }, [me, sessionId, navigate])
+
+  // First person in (the host, before anyone else joins): pop the share sheet
+  // once so the code/link is impossible to miss.
+  useEffect(() => {
+    if (!autoShared && session && (session.users?.length ?? 0) <= 1) {
+      setShowShare(true)
+      setAutoShared(true)
+    }
+  }, [session, autoShared])
 
   if (loading) {
     return (

@@ -155,6 +155,14 @@ export default function SessionSetupPage() {
           {shareError && <p className="text-red-500 text-xs text-center mt-2">{shareError}</p>}
         </>
       )}
+
+      {!isSupabaseConfigured && (
+        <p className="text-xs text-gray-400 text-center mt-5">
+          Want everyone to order from their own phone? Shared sessions need Supabase
+          configured (<span className="font-mono">VITE_SUPABASE_URL</span> &amp;{' '}
+          <span className="font-mono">VITE_SUPABASE_ANON_KEY</span>). See supabase/SETUP.md.
+        </p>
+      )}
     </div>
   )
 }

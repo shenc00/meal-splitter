@@ -36,12 +36,18 @@ export default function ShareModal({ sessionId, onClose }) {
           <h2 className="text-lg font-bold text-gray-900">Invite the table</h2>
           <button onClick={onClose} className="text-gray-300 hover:text-gray-500"><X className="w-5 h-5" /></button>
         </div>
-        <p className="text-sm text-gray-400 mb-5">Others scan this to order on their own phone.</p>
+        <p className="text-sm text-gray-400 mb-5">Others scan the QR, open the link, or enter the code on the home screen.</p>
 
-        <div className="flex justify-center mb-5">
+        <div className="flex justify-center mb-4">
           <div className="p-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
             <QRCodeCanvas value={url} size={196} />
           </div>
+        </div>
+
+        {/* Typed join code */}
+        <div className="text-center mb-4">
+          <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Session code</p>
+          <p className="text-3xl font-bold tracking-[0.3em] text-gray-900 pl-[0.3em]">{sessionId}</p>
         </div>
 
         <div className="flex items-center gap-2 mb-3">

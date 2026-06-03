@@ -1,12 +1,20 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext.jsx'
-import { UtensilsCrossed, Clock, ChevronRight, ReceiptText, BookOpen } from 'lucide-react'
+import { UtensilsCrossed, Clock, ChevronRight, ReceiptText, BookOpen, ArrowRight } from 'lucide-react'
+import { isSupabaseConfigured } from '../lib/supabase.js'
 
 export default function HomePage() {
   const { state } = useApp()
   const navigate = useNavigate()
+  const [joinCode, setJoinCode] = useState('')
   // One-off receipt scans are kept out of the saved restaurants list.
   const restaurants = state.restaurants.filter(r => !r.isReceipt)
+
+  const handleJoin = () => {
+    const code = joinCode.trim().toUpperCase()
+    if (code) navigate(`/join/${code}`)
+  }
 
   const sorted = [...restaurants].sort((a, b) => {
     if (!a.lastVisit && !b.lastVisit) return 0
@@ -41,6 +49,30 @@ export default function HomePage() {
           Scan Receipt
         </button>
       </div>
+
+      {/* Join a shared session by code */}
+      {isSupabaseConfigured && (
+        <div className="bg-white border border-gray-200 rounded-2xl p-4 mb-8">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Joining a group? Enter their code</p>
+          <div className="flex gap-2">
+            <input
+              value={joinCode}
+              onChange={e => setJoinCode(e.target.value.toUpperCase())}
+              onKeyDown={e => e.key === 'Enter' && handleJoin()}
+              placeholder="e.g. K7P2QX"
+              maxLength={8}
+              className="flex-1 border-2 border-gray-200 rounded-xl px-4 py-2.5 text-base font-bold tracking-[0.2em] uppercase focus:outline-none focus:border-orange-400 transition-colors"
+            />
+            <button
+              onClick={handleJoin}
+              disabled={!joinCode.trim()}
+              className="px-4 flex items-center justify-center bg-orange-500 text-white rounded-xl font-semibold disabled:opacity-40 hover:bg-orange-600 active:scale-95 transition-all"
+            >
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {sorted.length > 0 ? (
         <div>
